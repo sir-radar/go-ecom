@@ -182,3 +182,74 @@ func TestListProducts(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateProduct(t *testing.T) {
+	p := &Product{
+		ID:           1,
+		Name:         "test product",
+		Image:        "test.jpg",
+		Category:     "test",
+		Description:  "test",
+		Rating:       1,
+		NumReviews:   1,
+		Price:        100.0,
+		CountInStock: 30,
+	}
+
+	np := &Product{
+		ID:           1,
+		Name:         "new test product",
+		Image:        "test.jpg",
+		Category:     "test category",
+		Description:  "test description",
+		Rating:       5,
+		NumReviews:   99,
+		Price:        100.0,
+		CountInStock: 10,
+	}
+
+	tcs := []struct {
+		name string
+		test func(*testing.T, *MySQLStorer, sqlmock.Sqlmock)
+	}{
+		{
+			name: "success",
+			test: func(t *testing.T, st *MySQLStorer, mock sqlmock.Sqlmock) {
+				mock.ExpectExec("INSERT INTO products (name, image, category, description, rating, num_reviews, price, count_in_stock) VALUES (?, ?, ?, ?, ?, ?, ?,  ?)").WillReturnResult(sqlmock.NewResult(1, 1))
+				cp, err := st.CreateProduct(context.Background(), p)
+				require.NoError(t, err)
+				require.Equal(t, int64(1), cp.ID)
+
+				mock.ExpectExec("UPDATE products SET name=?, image=?, category=?, description=?, rating=?, num_reviews=?, price=?, count_in_stock=? WHERE id=?").WithArgs(np.Name, np.Image, np.Category, np.Description, np.Rating, np.NumReviews, np.Price, np.CountInStock, np.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+				up, err := st.UpdateProduct(context.Background(), np)
+				require.NoError(t, err)
+				require.Equal(t, int64(1), up.ID)
+				require.Equal(t, np.Name, up.Name)
+
+				err = mock.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "failed updating product",
+			test: func(t *testing.T, st *MySQLStorer, mock sqlmock.Sqlmock) {
+				mock.ExpectExec("UPDATE products SET name=?, image=?, category=?, description=?, rating=?, num_reviews=?, price=?, count_in_stock=? WHERE id=?").WithArgs(np.Name, np.Image, np.Category, np.Description, np.Rating, np.NumReviews, np.Price, np.CountInStock, np.ID).WillReturnError(fmt.Errorf("error updating product"))
+
+				_, err := st.UpdateProduct(context.Background(), np)
+				require.Error(t, err)
+				err = mock.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			withTestDB(t, func(db *sqlx.DB, mock sqlmock.Sqlmock) {
+				st := NewMySQLStorer(db)
+				tc.test(t, st, mock)
+			})
+		})
+	}
+
+}
