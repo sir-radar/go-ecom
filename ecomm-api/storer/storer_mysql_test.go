@@ -81,29 +81,52 @@ func TestCreateProduct(t *testing.T) {
 }
 
 func TestGetProduct(t *testing.T) {
-	withTestDB(t, func(db *sqlx.DB, mock sqlmock.Sqlmock) {
-		st := NewMySQLStorer(db)
+	p := &Product{
+		Name:         "test",
+		Image:        "test.jpg",
+		Category:     "test",
+		Description:  "test",
+		Rating:       1,
+		NumReviews:   1,
+		Price:        100.0,
+		CountInStock: 30,
+	}
 
-		p := &Product{
-			Name:         "test",
-			Image:        "test.jpg",
-			Category:     "test",
-			Description:  "test",
-			Rating:       1,
-			NumReviews:   1,
-			Price:        100.0,
-			CountInStock: 30,
-		}
+	tcs := []struct {
+		name string
+		test func(*testing.T, *MySQLStorer, sqlmock.Sqlmock)
+	}{
+		{
+			name: "success",
+			test: func(t *testing.T, st *MySQLStorer, mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"id", "name", "image", "category", "description", "rating", "num_reviews", "price", "count_in_stock", "create_at", "updated_at"}).AddRow(1, p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock, p.CreatedAt, p.UpdatedAt)
+				mock.ExpectQuery("SELECT * FROM products WHERE id=?").WithArgs(1).WillReturnRows(rows)
+				gp, err := st.GetProduct(context.Background(), 1)
+				require.NoError(t, err)
+				require.Equal(t, int64(1), gp.ID)
+				err = mock.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "failed getting product",
+			test: func(t *testing.T, st *MySQLStorer, mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT * FROM products WHERE id=?").WithArgs(1).WillReturnError(fmt.Errorf("error getting product"))
 
-		rows := sqlmock.NewRows([]string{"id", "name", "image", "category", "description", "rating", "num_reviews", "price", "count_in_stock", "create_at", "updated_at"}).AddRow(1, p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock, p.CreatedAt, p.UpdatedAt)
+				_, err := st.GetProduct(context.Background(), 1)
+				require.Error(t, err)
+				err = mock.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+	}
 
-		mock.ExpectQuery("SELECT * FROM products WHERE id=?").WithArgs(1).WillReturnRows(rows)
-
-		gp, err := st.GetProduct(context.Background(), 1)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), gp.ID)
-
-		err = mock.ExpectationsWereMet()
-		require.NoError(t, err)
-	})
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			withTestDB(t, func(db *sqlx.DB, mock sqlmock.Sqlmock) {
+				st := NewMySQLStorer(db)
+				tc.test(t, st, mock)
+			})
+		})
+	}
 }
