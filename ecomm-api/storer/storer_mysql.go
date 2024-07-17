@@ -107,7 +107,7 @@ func createOrder(ctx context.Context, tx *sqlx.Tx, o *Order) (*Order, error) {
 	return o, nil
 }
 
-func createOrderItem(ctx context.Context, tx *sqlx.Tx, oi *OrderItem) error {
+func createOrderItem(ctx context.Context, tx *sqlx.Tx, oi OrderItem) error {
 	res, err := tx.NamedExecContext(ctx, "INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES (:name, :quantity, :image, :price, :product_id, :order_id)", oi)
 	if err != nil {
 		return fmt.Errorf("error inserting order item: %w", err)
@@ -127,7 +127,7 @@ func (ms *MySQLStorer) GetOrder(ctx context.Context, id int64) (*Order, error) {
 		return nil, fmt.Errorf("error getting order: %w", err)
 	}
 
-	var items []*OrderItem
+	var items []OrderItem
 	err = ms.db.SelectContext(ctx, &items, "SELECT * FROM order_items WHERE order_id=?", id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting order items: %w", err)
@@ -144,7 +144,7 @@ func (ms *MySQLStorer) ListOrders(ctx context.Context) ([]*Order, error) {
 	}
 
 	for i := range orders {
-		var items []*OrderItem
+		var items []OrderItem
 		err = ms.db.SelectContext(ctx, &items, "SELECT * FROM order_items WHERE order_id=?", orders[i].ID)
 		if err != nil {
 			return nil, fmt.Errorf("error listing order items: %w", err)
