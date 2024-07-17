@@ -482,3 +482,94 @@ func TestGetOrder(t *testing.T) {
 	}
 
 }
+
+func TestListOrders(t *testing.T) {
+	ois := []OrderItem{
+		{
+			Name:      "test product",
+			Quantity:  1,
+			Image:     "test.jpg",
+			Price:     100.0,
+			ProductID: 1,
+		},
+		{
+			Name:      "test product 2",
+			Quantity:  3,
+			Image:     "test.jpg",
+			Price:     100.0,
+			ProductID: 1,
+		},
+	}
+
+	o := &Order{
+		PaymentMethod: "test payment method",
+		TaxPrice:      10.0,
+		ShippingPrice: 20.0,
+		TotalPrice:    30.0,
+		Items:         ois,
+	}
+
+	tcs := []struct {
+		name string
+		test func(t *testing.T, st *MySQLStorer, mock sqlmock.Sqlmock)
+	}{
+		{
+			name: "success",
+			test: func(t *testing.T, st *MySQLStorer, mock sqlmock.Sqlmock) {
+				orows := sqlmock.NewRows([]string{"id", "payment_method", "tax_price", "shipping_price", "total_price", "created_at", "updated_at"}).
+					AddRow(1, o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.CreatedAt, o.UpdatedAt)
+
+				mock.ExpectQuery("SELECT * FROM orders").WillReturnRows(orows)
+
+				oirows := sqlmock.NewRows([]string{"id", "name", "quantity", "image", "price", "product_id", "order_id"}).
+					AddRow(1, ois[0].Name, ois[0].Quantity, ois[0].Image, ois[0].Price, ois[0].ProductID, 1).
+					AddRow(2, ois[1].Name, ois[1].Quantity, ois[1].Image, ois[1].Price, ois[1].ProductID, 1)
+
+				mock.ExpectQuery("SELECT * FROM order_items WHERE order_id=?").WithArgs(1).WillReturnRows(oirows)
+
+				mo, err := st.ListOrders(context.Background())
+				require.NoError(t, err)
+				require.Len(t, mo, 1)
+
+				err = mock.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "failed listing orders",
+			test: func(t *testing.T, st *MySQLStorer, mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT * FROM orders").WillReturnError(fmt.Errorf("error listing orders"))
+
+				_, err := st.ListOrders(context.Background())
+				require.Error(t, err)
+
+				err = mock.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "failed listing order items",
+			test: func(t *testing.T, st *MySQLStorer, mock sqlmock.Sqlmock) {
+				orows := sqlmock.NewRows([]string{"id", "payment_method", "tax_price", "shipping_price", "total_price", "created_at", "updated_at"}).
+					AddRow(1, o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.CreatedAt, o.UpdatedAt)
+
+				mock.ExpectQuery("SELECT * FROM orders").WillReturnRows(orows)
+
+				mock.ExpectQuery("SELECT * FROM order_items WHERE order_id=?").WithArgs(1).WillReturnError(fmt.Errorf("error listing order items"))
+
+				_, err := st.ListOrders(context.Background())
+				require.Error(t, err)
+
+				err = mock.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		withTestDB(t, func(db *sqlx.DB, mock sqlmock.Sqlmock) {
+			st := NewMySQLStorer(db)
+			tc.test(t, st, mock)
+		})
+	}
+}
