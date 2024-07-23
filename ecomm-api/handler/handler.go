@@ -4,24 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
+	"github.com/go-chi/chi"
 	"github.com/sir-radar/go-ecom/ecomm-api/server"
 	"github.com/sir-radar/go-ecom/ecomm-api/storer"
 )
 
-type Handler struct {
+type handler struct {
 	ctx    context.Context
 	server *server.Server
 }
 
-func NewHandler(srv *server.Server) *Handler {
-	return &Handler{
+func NewHandler(srv *server.Server) *handler {
+	return &handler{
 		ctx:    context.Background(),
 		server: srv,
 	}
 }
 
-func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
+func (h *handler) createProduct(w http.ResponseWriter, r *http.Request) {
 	var p ProductReq
 
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
@@ -37,11 +39,30 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := toProductRes(product)
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(res)
 
+}
+
+func (h *handler) getProduct(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	i, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		http.Error(w, "error parsing ID", http.StatusBadRequest)
+		return
+	}
+
+	product, err := h.server.GetProduct(h.ctx, i)
+	if err != nil {
+		http.Error(w, "error getting product", http.StatusInternalServerError)
+		return
+	}
+
+	res := toProductRes(product)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res)
 }
 
 func toStorerProduct(p ProductReq) *storer.Product {
