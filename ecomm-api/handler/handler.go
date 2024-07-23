@@ -65,6 +65,22 @@ func (h *handler) getProduct(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+func (h *handler) listProducts(w http.ResponseWriter, r *http.Request) {
+	products, err := h.server.ListProducts(h.ctx)
+	if err != nil {
+		http.Error(w, "error listing products", http.StatusInternalServerError)
+		return
+	}
+
+	var res []ProductRes
+	for _, p := range products {
+		res = append(res, toProductRes(&p))
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res)
+}
+
 func toStorerProduct(p ProductReq) *storer.Product {
 	return &storer.Product{
 		Name:         p.Name,
