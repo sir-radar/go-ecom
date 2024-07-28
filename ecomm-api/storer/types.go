@@ -12,7 +12,7 @@ type Product struct {
 	NumReviews   int64      `db:"num_reviews"`
 	Price        float64    `db:"price"`
 	CountInStock int64      `db:"count_in_stock"`
-	CreatedAt    time.Time  `db:"create_at"`
+	CreatedAt    time.Time  `db:"created_at"`
 	UpdatedAt    *time.Time `db:"updated_at"`
 }
 
