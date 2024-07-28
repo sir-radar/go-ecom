@@ -28,7 +28,7 @@ type ProductRes struct {
 }
 
 type OrderReq struct {
-	Items         []OrderItem `json:"order_items"`
+	Items         []OrderItem `json:"items"`
 	PaymentMethod string      `json:"payment_method"`
 	TaxPrice      float64     `json:"tax_price"`
 	ShippingPrice float64     `json:"shipping_price"`
@@ -45,7 +45,7 @@ type OrderItem struct {
 
 type OrderRes struct {
 	ID            int64       `json:"id"`
-	Items         []OrderItem `json:"order_items"`
+	Items         []OrderItem `json:"items"`
 	PaymentMethod string      `json:"payment_method"`
 	TaxPrice      float64     `json:"tax_price"`
 	ShippingPrice float64     `json:"shipping_price"`
