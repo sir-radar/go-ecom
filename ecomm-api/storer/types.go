@@ -36,3 +36,13 @@ type OrderItem struct {
 	ProductID int64   `db:"product_id"`
 	OrderID   int64   `db:"order_id"`
 }
+
+type User struct {
+	ID        int64      `json:"id"`
+	Name      string     `json:"name"`
+	Email     string     `json:"email"`
+	Password  string     `json:"password"`
+	IsAdmin   bool       `json:"is_admin"`
+	CreatedAt time.Time  `json:"create_at"`
+	UpdatedAt *time.Time `json:"updated_at"`
+}
