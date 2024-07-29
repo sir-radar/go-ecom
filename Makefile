@@ -1,6 +1,8 @@
-# docker run -it --rm --network host --volume "$
-# (pwd)/db:/db" migrate/migrate:v4.17.0 create -ext sql -
-# dir /db/migrations init_schema
+# create migration
+# docker run -it --rm --network host --volume "$(pwd)/db:/db" migrate/migrate:v4.17.0 create -ext sql -dir /db/migrations {migration name}
+
+# run migrations
+# run -it --rm --network host --volume "$(pwd)/db:/db" migrate/migrate:v4.17.0 -path=/db/migrations -database "mysql://root:password@tcp(localhost:51963)/ecomm" up
 
 
 # go mod tidy
@@ -22,9 +24,4 @@ run:
 	@echo "Starting API..."
 	cd ./cmd/ecomm-api && go run main.go
 
-
-# migrate:
-# 	@echo "Migrating..."
-#   docker run -it --rm --network host --volume "$(pwd)/db:/db" migrate/migrate:v4.17.0 -path=/db/migrations -database "mysql://root:password@tcp(localhost:51963)/ecomm" up
-# 	@echo "Done!"
 
