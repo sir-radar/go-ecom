@@ -2,12 +2,11 @@
 # docker run -it --rm --network host --volume "$(pwd)/db:/db" migrate/migrate:v4.17.0 create -ext sql -dir /db/migrations {migration name}
 
 # run migrations
-# run -it --rm --network host --volume "$(pwd)/db:/db" migrate/migrate:v4.17.0 -path=/db/migrations -database "mysql://root:password@tcp(localhost:51963)/ecomm" up
+# docker run -it --rm --network host --volume "$(pwd)/db:/db" migrate/migrate:v4.17.0 -path=/db/migrations -database "mysql://root:password@tcp(localhost:51963)/ecomm" up
 
 
 # go mod tidy
 # go test -v -cover
-# up_migrate=$(docker run -it --rm --network host --volume /$(pwd)/db:/db migrate/migrate:v4.17.0 -path=/db/migrations -database "mysql://root:password@tcp(localhost:51963)/ecomm" up)
 
 up:
 	@echo "Starting Docker images..."

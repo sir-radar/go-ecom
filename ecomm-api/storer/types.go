@@ -22,6 +22,7 @@ type Order struct {
 	TaxPrice      float64    `db:"tax_price"`
 	ShippingPrice float64    `db:"shipping_price"`
 	TotalPrice    float64    `db:"total_price"`
+	UserID        int64      `db:"user_id"`
 	CreatedAt     time.Time  `db:"created_at"`
 	UpdatedAt     *time.Time `db:"updated_at"`
 	Items         []OrderItem
@@ -38,11 +39,20 @@ type OrderItem struct {
 }
 
 type User struct {
-	ID        int64      `json:"id"`
-	Name      string     `json:"name"`
-	Email     string     `json:"email"`
-	Password  string     `json:"password"`
-	IsAdmin   bool       `json:"is_admin"`
-	CreatedAt time.Time  `json:"create_at"`
-	UpdatedAt *time.Time `json:"updated_at"`
+	ID        int64      `db:"id"`
+	Name      string     `db:"name"`
+	Email     string     `db:"email"`
+	Password  string     `db:"password"`
+	IsAdmin   bool       `db:"is_admin"`
+	CreatedAt time.Time  `db:"created_at"`
+	UpdatedAt *time.Time `db:"updated_at"`
+}
+
+type Session struct {
+	ID           string    `db:"id"`
+	UserEmail    string    `db:"user_email"`
+	RefreshToken string    `db:"refresh_token"`
+	IsRevoked    bool      `db:"is_revoked"`
+	CreatedAt    time.Time `db:"created_at"`
+	ExpiresAt    time.Time `db:"expires_at"`
 }
